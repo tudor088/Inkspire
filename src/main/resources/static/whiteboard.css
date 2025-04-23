@@ -1,0 +1,27 @@
+canvas {
+    position: relative;
+    z-index: 0;
+    border: 1px solid #999;
+}
+
+#preview {
+    pointer-events: none;
+    background: transparent;
+    position: absolute;
+    z-index: 2;
+}
+
+#board {
+    position: absolute;
+    z-index: 1;
+}
+
+
+#preview {
+    pointer-events: none;
+    z-index: 2;
+}
+
+#textToolInput {
+    position: absolute;
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+<h1>Whiteboard Session</h1>
+<input id="msg" placeholder="Draw JSON">
+<button onclick="send()">Send</button>
+<pre id="log"></pre>
+
+<script>
+    const socket = new SockJS('/ws');
+    const stomp = Stomp.over(socket);
+
+    stomp.connect({}, () => {
+        stomp.subscribe('/topic/session.demo123', msg => {
+            document.getElementById('log').textContent += msg.body + '\n';
+        });
+    });
+
+    function send() {
+        const payload = {
+            sessionCode: "demo123",
+            type: "freehand",
+            dataJson: document.getElementById('msg').value
+        };
+
+        stomp.send('/app/draw', {}, JSON.stringify(payload));
+    }
+</script>
+</body>
+</html>

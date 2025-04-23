@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Inkspire Whiteboard</title>
+    <link rel="stylesheet" href="whiteboard.css">
+</head>
+<body>
+    <h1>Inkspire</h1>
+    <p>Session Code: <input id="sessionCode" value="demo123"> User ID: <input id="userId" value="1"></p>
+    <p>
+        <strong>Tool:</strong><br>
+        <label><input type="radio" name="tool" value="brush" checked> Normal Brush</label><br>
+        <label><input type="radio" name="tool" value="pen"> Pen (Pressure Simulated)</label><br>
+        <label><input type="radio" name="tool" value="line"> Straight Line</label><br>
+        <label><input type="radio" name="tool" value="rectangle"> Rectangle</label><br>
+        <label><input type="radio" name="tool" value="circle"> Circle</label><br>
+        <label><input type="radio" name="tool" value="text"> Text Tool</label>
+        <label><input type="radio" name="tool" value="eraser"> Eraser Tool</label>
+        <label><input type="radio" name="tool" value="highlighter"> Highlighter</label>
+    </p>
+
+    <p>
+        Color:
+        <input type="color" id="colorPicker" value="#000000">
+
+        Size:
+        <input type="range" id="brushSize" min="1" max="20" value="2">
+    </p>
+    <button onclick="clearCanvas()">Clear</button>
+    <button onclick="undo()">Undo</button>
+
+
+    <div id="canvas-wrapper" style="position: relative; width: 800px; height: 600px;">
+        <canvas id="board" width="800" height="600" style="z-index: 1;"></canvas>
+        <canvas id="preview" width="800" height="600" style="z-index: 2; position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+        <textarea id="textToolInput"
+                  style="display: none; position: absolute;
+                 background: rgba(255,255,255,0.8);
+                 border: 1px solid #ccc; z-index: 10;
+                 resize: none; overflow: hidden;"></textarea>
+    </div>
+
+
+
+
+
+    <!-- External libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <!-- App logic -->
+    <script src="whiteboard.js"></script>
+</body>
+</html>
