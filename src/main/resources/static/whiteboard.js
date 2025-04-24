@@ -1,5 +1,3 @@
-const canvas = document.getElementById('board');
-const ctx = canvas.getContext('2d');
 let drawing = false;
 let points = [];
 const myClientId = crypto.randomUUID();
@@ -12,56 +10,105 @@ const socket = new SockJS('/ws');
 const stomp = Stomp.over(socket);
 
 let shiftKeyPressed = false;
+let shapeStart = null;
 
-let shapeStart = null; // for line/rect/circle start point
-let previewCanvas = null;
-let previewCtx = null;
+let canvas, ctx, previewCanvas, previewCtx;
 
-previewCanvas = document.getElementById('preview');
-previewCtx = previewCanvas.getContext('2d');
+let history = [];
+let redoStack = [];
 
-let history = [];      // List of all strokes (each is { points, color })
-let redoStack = [];    // For redo functionality
+document.addEventListener("DOMContentLoaded", () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const code = localStorage.getItem("sessionCode");
 
-stomp.connect({}, () => {
-    const sessionCode = document.getElementById("sessionCode").value;
-    stomp.subscribe(`/topic/session.${sessionCode}`, msg => {
-        const data = JSON.parse(msg.body);
+    if (!user || !code) {
+        return window.location.href = "login.html";
+    }
 
-        if (data.action === "draw") {
-            if (data.clientId === myClientId) return;
-            const stroke = JSON.parse(data.dataJson);
-            history.push(stroke);
-            redrawCanvas();
-        }
+    // Fill hidden inputs
+    document.getElementById("userId").value = user.id;
+    document.getElementById("sessionCode").value = code;
 
-        if (data.action === "undo") {
-            if (data.strokeId) {
-                const index = history.findIndex(stroke => stroke.id === data.strokeId);
-                if (index !== -1) {
-                    history.splice(index, 1);
-                    redrawCanvas();
-                }
-            }
-        }
+    // Set session name
+    fetch(`/api/sessions/code/${code}`)
+        .then(res => res.json())
+        .then(session => {
+            document.getElementById("sessionName").textContent = session.name;
+        });
 
+    // Initialize canvas *AFTER DOM is loaded*
+    canvas = document.getElementById("board");
+    ctx = canvas.getContext("2d");
+    previewCanvas = document.getElementById("preview");
+    previewCtx = previewCanvas.getContext("2d");
 
-        if (data.action === "redo") {
-            if (data.stroke) {
-                history.push(data.stroke);
-                redrawCanvas();
-            }
-        }
+    // Event bindings NOW
+    canvas.addEventListener("mousedown", handleMouseDown);
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseup", handleMouseUp);
 
-        if (data.action === "clear") {
-            history = [];
-            redoStack = [];
-            redrawCanvas();
-        }
+    // Color/size
+    document.getElementById("colorPicker").addEventListener("input", (e) => {
+        currentColor = e.target.value;
+    });
+    document.getElementById("brushSize").addEventListener("input", (e) => {
+        currentSize = parseInt(e.target.value);
     });
 
-    loadDrawings();
+    // Resize fix
+    window.addEventListener("resize", () => {
+        scaleCanvasForHiDPI(canvas, ctx);
+        scaleCanvasForHiDPI(previewCanvas, previewCtx);
+        redrawCanvas();
+    });
+
+    // WebSocket
+    stomp.connect({}, () => {
+        stomp.subscribe(`/topic/session.${code}`, (msg) => {
+            const data = JSON.parse(msg.body);
+            if (data.clientId === myClientId) return;
+
+            switch (data.action) {
+                case "draw":
+                    history.push(JSON.parse(data.dataJson));
+                    redrawCanvas();
+                    break;
+                case "undo":
+                    history = history.filter(s => s.id !== data.strokeId);
+                    redrawCanvas();
+                    break;
+                case "clear":
+                    history = [];
+                    redoStack = [];
+                    redrawCanvas();
+                    break;
+                case "joined":
+                case "left":
+                    loadUserList();
+                    break;
+            }
+        });
+
+        loadUserList();
+
+        setTimeout(() => {
+            stomp.send(
+                "/app/join",
+                {},
+                JSON.stringify({ sessionCode: code, userId: user.id })
+            );
+        }, 0);
+
+        loadDrawings(); // only after connect
+    });
+
+    //loadUserList();
 });
+
+
+
+
+
 
 document.getElementById("colorPicker").addEventListener("input", (e) => {
     currentColor = e.target.value;
@@ -75,16 +122,22 @@ function sendDrawing(rawPoints) {
     const userId = parseInt(document.getElementById("userId").value);
     const strokeId = crypto.randomUUID();
 
-    let enhancedPoints;
+    let enhancedPoints = rawPoints;
 
     if (currentTool === "pen") {
         enhancedPoints = rawPoints.map((p, i) => {
-            const pressure = i / (rawPoints.length - 1 || 1); // 0 to 1
-            const dynamicWidth = 1 + pressure * (currentSize - 1); // simulate pressure
+            const pressure = i / (rawPoints.length - 1 || 1);
+            const dynamicWidth = 1 + pressure * (currentSize - 1);
             return [p[0], p[1], dynamicWidth];
         });
-    } else {
-        enhancedPoints = rawPoints.map(p => [p[0], p[1]]); // brush: simple x, y
+    } else if (currentTool === "brush") {
+        const beziers = catmullRomToBezier(rawPoints);
+        const flattened = [rawPoints[0]];
+        for (let b of beziers) {
+            const flat = flattenBezier([b[0], b[1]], [b[2], b[3]], [b[4], b[5]], [b[6], b[7]]);
+            flattened.push(...flat.slice(1));
+        }
+        enhancedPoints = flattened; // ✅ now truly flat [x, y] coords
     }
 
     const stroke = {
@@ -95,7 +148,6 @@ function sendDrawing(rawPoints) {
         type: currentTool,
         userId
     };
-
 
     history.push(stroke);
     redoStack = [];
@@ -109,6 +161,7 @@ function sendDrawing(rawPoints) {
         dataJson: JSON.stringify(stroke)
     }));
 }
+
 
 
 
@@ -176,7 +229,7 @@ async function loadDrawings() {
 }
 
 
-canvas.addEventListener("mousedown", e => {
+function handleMouseDown(e){
     if (currentTool === "eraser") {
         drawing = true;
         return;
@@ -193,20 +246,14 @@ canvas.addEventListener("mousedown", e => {
         return;
     }
 
-
-
-
-
-
-
     // Fallback: drawing begins for other tools
     drawing = true;
     points = [[e.offsetX, e.offsetY]];
-});
+}
 
 
 
-canvas.addEventListener("mousemove", e => {
+function handleMouseMove(e) {
     const x = e.offsetX, y = e.offsetY;
 
     if (drawing && currentTool === "eraser") {
@@ -223,8 +270,8 @@ canvas.addEventListener("mousemove", e => {
             if (type === "brush" || type === "pen" || type === "highlighter") {
                 const pts = stroke.points;
                 for (let j = 1; j < pts.length; j++) {
-                    const [x1, y1] = pts[j - 1];
-                    const [x2, y2] = pts[j];
+                    const [x1, y1] = pts[j - 1].slice(0, 2);
+                    const [x2, y2] = pts[j].slice(0, 2);
                     if (pointToSegmentDistance(eraserX, eraserY, x1, y1, x2, y2) < threshold) {
                         isHit = true;
                         break;
@@ -386,11 +433,11 @@ canvas.addEventListener("mousemove", e => {
         }
         previewCtx.stroke();
     }
-});
+}
 
 
 
-canvas.addEventListener("mouseup", () => {
+function handleMouseUp(e) {
     if (currentTool === "eraser") {
         drawing = false;
         return;
@@ -537,6 +584,7 @@ canvas.addEventListener("mouseup", () => {
     drawing = false;
     if (points.length > 1 && ["brush", "pen", "highlighter"].includes(currentTool)) {
         const simplified = smoothPoints(points);
+        points = simplified;
         sendDrawing(simplified);
 
 // draw it locally with same smoothing as others
@@ -570,7 +618,7 @@ canvas.addEventListener("mouseup", () => {
 
 
     }
-});
+}
 
 function liveStroke(points) {
     ctx.lineCap = "round";
@@ -643,9 +691,6 @@ function smoothStroke(points, { color, width, cap = "round", join = "round" }) {
 
     ctx.stroke();
 }
-
-
-
 
 function drawFromData(json) {
     const stroke = JSON.parse(json);
@@ -856,7 +901,7 @@ function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
     } else {
         xx = x1 + param * C;
         yy = y1 + param * D;
-    }olofmeisterboostmeister495060tec9
+    }
 
     const dx = px - xx;
     const dy = py - yy;
@@ -871,4 +916,106 @@ function hexToRgba(hex, alpha) {
     const b = bigint & 255;
     return `rgba(${r},${g},${b},${alpha})`;
 }
+
+function scaleCanvasForHiDPI(canvas, ctx) {
+    const ratio = window.devicePixelRatio || 1;
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    // Resize canvas for actual drawing pixels
+    canvas.width = displayWidth * ratio;
+    canvas.height = displayHeight * ratio;
+
+    // Scale all drawings
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+}
+
+
+window.addEventListener("resize", () => {
+    scaleCanvasForHiDPI(canvas, ctx);
+    scaleCanvasForHiDPI(previewCanvas, previewCtx);
+    redrawCanvas();
+});
+
+function flattenBezier(p0, cp1, cp2, p1, segments = 10) {
+    const points = [];
+    for (let t = 0; t <= 1; t += 1 / segments) {
+        const x = Math.pow(1 - t, 3) * p0[0] +
+            3 * Math.pow(1 - t, 2) * t * cp1[0] +
+            3 * (1 - t) * t * t * cp2[0] +
+            t * t * t * p1[0];
+        const y = Math.pow(1 - t, 3) * p0[1] +
+            3 * Math.pow(1 - t, 2) * t * cp1[1] +
+            3 * (1 - t) * t * t * cp2[1] +
+            t * t * t * p1[1];
+        points.push([x, y]);
+    }
+    return points;
+}
+
+function leaveSessionAndReturn() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const sessionCode = localStorage.getItem("sessionCode");
+
+    // 1) broadcast that you're leaving
+    stomp.send(
+        "/app/leave",
+        {},
+        JSON.stringify({ sessionCode, userId: user.id })
+    );
+
+    // 2) then actually remove you on the server and redirect
+    fetch(`/api/sessions/leave/${user.id}/${sessionCode}`, { method: "DELETE" })
+        .finally(() => {
+            localStorage.removeItem("sessionCode");
+            window.location.href = "dashboard.html";
+        });
+}
+
+
+// Function to update the user list dynamically when someone joins or leaves
+function updateUserList(username, action) {
+    const userList = document.getElementById("userList");
+
+    if (action === "joined") {
+        const userItem = document.createElement("li");
+        userItem.textContent = username;
+        userList.appendChild(userItem);
+    } else if (action === "left") {
+        const allUsers = Array.from(userList.children);
+        const userToRemove = allUsers.find(user => user.textContent === username);
+        if (userToRemove) {
+            userList.removeChild(userToRemove);
+        }
+    }
+}
+
+// Function to load all users connected to the session
+function loadUserList() {
+    const sessionCode = document.getElementById("sessionCode").value;
+    fetch(`/api/sessions/code/${sessionCode}`)
+        .then(res => res.json())
+        .then(session => {
+            const userList = document.getElementById("userList");
+            userList.innerHTML = "";
+            session.participants.forEach(u => {
+                const li = document.createElement("li");
+                li.textContent = u.username;
+                userList.appendChild(li);
+            });
+        });
+}
+
+function leaveSessionAndReturn() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const sessionCode = localStorage.getItem("sessionCode");
+
+    fetch(`/api/sessions/leave/${user.id}/${sessionCode}`, { method: "DELETE" })
+        .finally(() => {
+            localStorage.removeItem("sessionCode");
+            window.location.href = "dashboard.html";
+        });
+}
+
+
 

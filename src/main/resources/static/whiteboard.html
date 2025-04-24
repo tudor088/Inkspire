@@ -2,23 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Inkspire Whiteboard</title>
+    <title>Whiteboard | Inkspire</title>
     <link rel="stylesheet" href="whiteboard.css">
+    <link rel="icon" type="image/x-icon" href="icon.ico">
 </head>
 <body>
-    <h1>Inkspire</h1>
-    <p>Session Code: <input id="sessionCode" value="demo123"> User ID: <input id="userId" value="1"></p>
-    <p>
-        <strong>Tool:</strong><br>
-        <label><input type="radio" name="tool" value="brush" checked> Normal Brush</label><br>
-        <label><input type="radio" name="tool" value="pen"> Pen (Pressure Simulated)</label><br>
-        <label><input type="radio" name="tool" value="line"> Straight Line</label><br>
-        <label><input type="radio" name="tool" value="rectangle"> Rectangle</label><br>
-        <label><input type="radio" name="tool" value="circle"> Circle</label><br>
-        <label><input type="radio" name="tool" value="text"> Text Tool</label>
-        <label><input type="radio" name="tool" value="eraser"> Eraser Tool</label>
-        <label><input type="radio" name="tool" value="highlighter"> Highlighter</label>
-    </p>
+    <h1 id="sessionName">Inkspire Whiteboard</h1>
+    <div>
+        <h2>Connected Users</h2>
+        <ul id="userList"></ul>
+    </div>
+
+
+    <input id="sessionCode" type="hidden">
+    <input id="userId" type="hidden">
 
     <p>
         Color:
@@ -42,7 +39,20 @@
     </div>
 
 
+    <button onclick="leaveSessionAndReturn()">Back to Dashboard</button>
 
+
+    <p>
+        <strong>Tool:</strong><br>
+        <label><input type="radio" name="tool" value="brush" checked> Normal Brush</label><br>
+        <label><input type="radio" name="tool" value="pen"> Pen (Pressure Simulated)</label><br>
+        <label><input type="radio" name="tool" value="line"> Straight Line</label><br>
+        <label><input type="radio" name="tool" value="rectangle"> Rectangle</label><br>
+        <label><input type="radio" name="tool" value="circle"> Circle</label><br>
+        <label><input type="radio" name="tool" value="text"> Text Tool</label>
+        <label><input type="radio" name="tool" value="eraser"> Eraser Tool</label>
+        <label><input type="radio" name="tool" value="highlighter"> Highlighter</label>
+    </p>
 
 
     <!-- External libraries -->

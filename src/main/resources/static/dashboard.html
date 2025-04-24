@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | Inkspire</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="icon" type="image/x-icon" href="icon.ico">
+</head>
+<body>
+<div class="dashboard-container">
+    <h1>Welcome, <span id="currentUser"></span></h1>
+    <button id="logoutBtn">Logout</button>
+
+    <h2>Available Sessions</h2>
+    <ul id="sessionList"></ul>
+
+    <button id="createSessionBtn">Create New Session</button>
+</div>
+
+<!-- Create Session Modal -->
+<div id="createSessionModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeModalBtn">&times;</span>
+        <h2>Create a Session</h2>
+        <label>Session Name:
+            <input type="text" id="sessionName" required>
+        </label><br>
+        <label>Password (optional):
+            <input type="password" id="sessionPassword">
+        </label><br>
+        <button id="confirmCreateSessionBtn">Create</button>
+    </div>
+</div>
+
+<!-- Password Prompt Modal -->
+<div id="passwordModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closePasswordModalBtn">&times;</span>
+        <h2>Enter Password</h2>
+        <input type="password" id="joinSessionPassword" placeholder="Enter password">
+        <br><br>
+        <button id="submitPasswordBtn">Join</button>
+    </div>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

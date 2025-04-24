@@ -78,4 +78,46 @@ public class WebSocketDrawingController {
         messaging.convertAndSend("/topic/session." + sessionCode, msg);
     }
 
+    // User joining a session
+    @MessageMapping("/join")
+    public void handleUserJoin(UserJoinMessage msg) {
+        // THIS MUST NOT be null:
+        String sessionCode = msg.getSessionCode();
+
+        WhiteboardSession session = sessionRepo
+                .findBySessionCode(sessionCode)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        User user = userRepo.findById(msg.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        session.getParticipants().add(user);
+        sessionRepo.save(session);
+
+        // Broadcast *to the correct topic*:
+        messaging.convertAndSend(
+                "/topic/session." + sessionCode,
+                new UserJoinMessage(user.getId(), user.getUsername(), "joined")
+        );
     }
+
+
+    // User leaving a session
+    @MessageMapping("/leave")
+    public void handleUserLeave(UserJoinMessage msg) {
+        String sessionCode = msg.getSessionCode();
+        Long userId = msg.getUserId();
+
+        WhiteboardSession session = sessionRepo.findBySessionCode(sessionCode)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Remove user from session
+        session.getParticipants().remove(user);
+        sessionRepo.save(session);
+
+        // Send updated participant list to everyone
+        messaging.convertAndSend("/topic/session." + sessionCode, new UserJoinMessage(userId, user.getUsername(), "left"));
+    }
+}

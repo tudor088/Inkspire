@@ -19,6 +19,13 @@ public class WhiteboardSession {
     private Long id;
 
     private String sessionCode;
+    private String name;
+    private String password;
+    private boolean passwordProtected;
+
+    @ManyToOne
+    @JoinColumn(name = "creator_id")
+    private User creator;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -29,4 +36,8 @@ public class WhiteboardSession {
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     private Set<User> participants = new HashSet<>();
+
+    public boolean isPasswordProtected() {
+        return password != null && !password.isBlank();
+    }
 }
