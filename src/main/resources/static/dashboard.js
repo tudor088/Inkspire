@@ -69,30 +69,70 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function loadSessions() {
+    const user = JSON.parse(localStorage.getItem("user"));
+
     fetch("/api/sessions/all")
         .then(res => res.json())
         .then(data => {
+            // 1) Split into “mine” vs “others”
+            const mine   = data.filter(s => s.creatorUsername === user.username);
+            const others = data.filter(s => s.creatorUsername !== user.username);
+
+            // 2) Shuffle the “others”
+            for (let i = others.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [others[i], others[j]] = [others[j], others[i]];
+            }
+
+            // 3) Concatenate so yours come first
+            const sorted = [...mine, ...others];
+
             const list = document.getElementById("sessionList");
             list.innerHTML = "";
 
-            data.forEach(session => {
+            sorted.forEach(session => {
                 const li = document.createElement("li");
+                li.style.position = "relative";
 
-                const isProtected = session.passwordProtected ? "🔒" : "🔓";
-                const createdDate = new Date(session.createdAt).toLocaleString();
-                const creator = session.creatorUsername || "Unknown";
-
+                // main info
                 li.innerHTML = `
-                    <strong>${session.name}</strong> ${isProtected}<br>
-                    Created by: ${session.creatorUsername || "Unknown"}<br>
-                    Created at: ${createdDate}<br>
-                    Connected users: ${session.connectedUsersCount}<br>
-                    <button onclick="handleJoin('${session.sessionCode}', ${session.passwordProtected})">Join</button>
-                `;
+          <strong>${session.name}</strong>
+          ${session.passwordProtected ? "🔒" : "🔓"}<br>
+          Created by: ${session.creatorUsername}<br>
+          Created at: ${new Date(session.createdAt).toLocaleString()}<br>
+          Connected users: ${session.connectedUsersCount}
+        `;
+
+                // Join button
+                const joinBtn = document.createElement("button");
+                joinBtn.textContent = "Join";
+                joinBtn.onclick = () => handleJoin(session.sessionCode, session.passwordProtected);
+                li.appendChild(joinBtn);
+
+                // 4) If I’m the creator, add a delete “×” in the corner
+                if (session.creatorUsername === user.username) {
+                    const delBtn = document.createElement("button");
+                    delBtn.textContent = "×";
+                    delBtn.className = "kick-btn";  // reuse the small red style
+                    delBtn.style.position = "absolute";
+                    delBtn.style.top  = "0px";
+                    delBtn.style.right = "0px";
+                    delBtn.onclick = () => {
+                        if (!confirm(`Delete session "${session.name}" forever?`)) return;
+                        fetch(`/api/sessions/delete/${user.id}/${session.sessionCode}`, {
+                            method: "DELETE"
+                        })
+                            .then(() => loadSessions())
+                            .catch(err => alert("Failed to delete: " + err));
+                    };
+                    li.appendChild(delBtn);
+                }
+
                 list.appendChild(li);
             });
         });
 }
+
 
 function handleJoin(code, isProtected) {
     const user = JSON.parse(localStorage.getItem("user"));

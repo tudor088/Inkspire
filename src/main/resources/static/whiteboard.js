@@ -17,6 +17,8 @@ let canvas, ctx, previewCanvas, previewCtx;
 let history = [];
 let redoStack = [];
 
+let isCreator = false;
+
 document.addEventListener("DOMContentLoaded", () => {
     const user = JSON.parse(localStorage.getItem("user"));
     const code = localStorage.getItem("sessionCode");
@@ -29,11 +31,22 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("userId").value = user.id;
     document.getElementById("sessionCode").value = code;
 
+
+
     // Set session name
     fetch(`/api/sessions/code/${code}`)
         .then(res => res.json())
         .then(session => {
             document.getElementById("sessionName").textContent = session.name;
+
+            // Only the creator sees the CLEAR button
+            if (session.creator.id === user.id) {
+                isCreator = true;
+                document.getElementById("clearBtn").style.display = "inline-block";
+            }
+
+            loadUserList();
+
         });
 
     // Initialize canvas *AFTER DOM is loaded*
@@ -85,19 +98,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 case "joined":
                 case "left":
                     loadUserList();
+                    const me = parseInt(document.getElementById("userId").value, 10);
+                    if (data.userId === me) {
+                        alert("You have been removed from this session.");
+                        // clean up local state & go back
+                        localStorage.removeItem("sessionCode");
+                        window.location.href = "dashboard.html";
+                    }
                     break;
             }
         });
 
         loadUserList();
-
-        setTimeout(() => {
-            stomp.send(
-                "/app/join",
-                {},
-                JSON.stringify({ sessionCode: code, userId: user.id })
-            );
-        }, 0);
 
         loadDrawings(); // only after connect
     });
@@ -996,15 +1008,35 @@ function loadUserList() {
     fetch(`/api/sessions/code/${sessionCode}`)
         .then(res => res.json())
         .then(session => {
-            const userList = document.getElementById("userList");
-            userList.innerHTML = "";
+            const ul = document.getElementById("userList");
+            ul.innerHTML = "";
+
             session.participants.forEach(u => {
                 const li = document.createElement("li");
                 li.textContent = u.username;
-                userList.appendChild(li);
+
+                // only if I’m the creator do I inject the “×” kick button
+                if (isCreator && u.id !== parseInt(document.getElementById("userId").value)) {
+                    const btn = document.createElement("button");
+                    btn.textContent = "×";
+                    btn.className = "kick-btn";
+                    btn.onclick = () => {
+                        fetch(
+                            `/api/sessions/kick/${ /* using the hidden input now */
+                                document.getElementById("userId").value
+                            }/${u.id}/${sessionCode}`,
+                            { method: "POST" }
+                        ).catch(console.error);
+                    };
+                    li.appendChild(btn);
+                }
+
+                ul.appendChild(li);
             });
         });
 }
+
+
 
 function leaveSessionAndReturn() {
     const user = JSON.parse(localStorage.getItem("user"));
