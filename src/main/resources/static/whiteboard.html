@@ -12,25 +12,40 @@
 <body>
 <div class="app-container">
     <!-- ─── SIDEBAR ─── -->
-    <aside class="sidebar">
-        <img src="icons/inkspire.svg" alt="Inkspire Logo" class="sidebar__logo">
+    <div class="left-col">
 
-        <h1 class="sidebar__title" id="sessionName">Inkspire Whiteboard</h1>
-        <hr class="sidebar__divider">
+        <!-- blue header / user-list / buttons -->
+        <aside class="sidebar">
+            <img src="icons/inkspire.svg" class="sidebar__logo" alt="Inkspire logo">
 
-        <section class="users">
-            <h2 class="sidebar__users-heading">Connected Users</h2>
-            <ul class="sidebar__user-list" id="userList"></ul>
-        </section>
+            <h1 class="sidebar__title" id="sessionName">Inkspire Whiteboard</h1>
+            <hr class="sidebar__divider">
 
-        <section class="sidebar__footer">
-            <button id="clearBtn" class="sidebar__action" style="display:none;" onclick="clearCanvas()">Clear</button>
-            <button id="disconnectBtn" class="sidebar__action" onclick="leaveSessionAndReturn()">Disconnect</button>
-        </section>
+            <section class="users">
+                <h2 class="sidebar__users-heading">Connected Users</h2>
+                <ul class="sidebar__user-list" id="userList"></ul>
+            </section>
 
+            <section class="sidebar__footer">
+                <button id="clearBtn" class="sidebar__action" onclick="clearCanvas()">Clear</button>
+                <button id="disconnectBtn" class="sidebar__action" onclick="leaveSessionAndReturn()">Disconnect</button>
+            </section>
+        </aside>
+
+        <!-- white chat panel -->
+        <aside class="chat-panel">
+            <div  id="chatMessages" class="chat__messages"></div>
+
+            <form id="chatForm" class="chat__input-row">
+                <input id="chatInput" type="text" autocomplete="off"
+                       placeholder="Type in chat…">
+            </form>
+        </aside>
+
+        <!-- hidden helpers -->
         <input id="sessionCode" type="hidden">
         <input id="userId"      type="hidden">
-    </aside>
+    </div>
 
     <!-- ─── MAIN WHITEBOARD ─── -->
     <main class="whiteboard" tabindex="0">

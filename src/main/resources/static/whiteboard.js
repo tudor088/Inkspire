@@ -16,6 +16,10 @@ let isRightNowPanning = false;
 let panStart = { x: 0, y: 0 };
 let scrollStart = { x: 0, y: 0 };
 
+let chatMessagesEl;   // declare only
+
+let username;  // filled after we read localStorage
+
 let canvas, ctx, previewCanvas, previewCtx;
 
 let history = [];
@@ -26,6 +30,7 @@ let isCreator = false;
 document.addEventListener("DOMContentLoaded", () => {
     const user = JSON.parse(localStorage.getItem("user"));
     const code = localStorage.getItem("sessionCode");
+    chatMessagesEl = document.getElementById("chatMessages");
 
     if (!user || !code) {
         return window.location.href = "login.html";
@@ -60,7 +65,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const panContainer = document.querySelector(".whiteboard");
     panContainer.focus();
     const textInput = document.getElementById("textToolInput");
-    const isTyping = () => document.activeElement === textInput;
+    let   chatInput;   // we’ll set it a few lines later
+
+    const isTyping = () => {
+        const a = document.activeElement;
+        return a === textInput || a === chatInput;   // true when either input is active
+    };
+
     const wrapper = document.getElementById("canvas-wrapper");
     const w       = wrapper.clientWidth;
     const h       = wrapper.clientHeight;
@@ -218,6 +229,24 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+
+        /* 2) subscribe to live topic once STOMP is connected */
+        stomp.subscribe(`/topic/session.${code}.chat`, msg => {
+            const incoming = JSON.parse(msg.body);
+            renderChatMessage(incoming);
+            scrollChatToBottom();
+        });
+
+        /* 1) load history just once */
+        fetch(`/api/chat/session/${code}`)
+            .then(r => r.json())
+            .then(history => {
+                history.forEach(renderChatMessage);
+                scrollChatToBottom();
+            });
+
+
+
         loadUserList();
 
         loadDrawings(); // only after connect
@@ -252,6 +281,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     toolbarSize.addEventListener('input', updateSliderFill);
     updateSliderFill();
+
+    username = user.username;            // reuse the user we already fetched
+    chatInput = document.getElementById("chatInput");
+    const chatForm   = document.getElementById("chatForm");
+
+
+
+    /* 3) send on <Enter> */
+    chatForm.addEventListener("submit", e => {
+        e.preventDefault();
+        const content = chatInput.value.trim();
+        if (!content) return;
+
+        const payload = {
+            sessionCode: code,
+            userId: user.id,
+            username: username,
+            content: content,
+            isoTimestamp: new Date().toISOString()
+        };
+        stomp.send("/app/chat", {}, JSON.stringify(payload)); // server will persist + rebroadcast
+        chatInput.value = "";
+    });
 
     const colorPuck  = document.querySelector('.tools-bar .color-picker');
     const hiddenColor = document.getElementById('colorPicker');
@@ -1157,3 +1209,39 @@ function leaveSessionAndReturn() {
         });
 }
 
+function renderChatMessage({ username, content, isoTimestamp }) {
+    if (!chatMessagesEl) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "chat__msg";
+
+    // ── first row: name + timestamp
+    const header = document.createElement("div");
+    header.className = "chat__msg-header";
+
+    const who = document.createElement("strong");
+    who.textContent = username;
+
+    const ts = document.createElement("span");
+    ts.className = "ts";
+    ts.textContent = new Date(isoTimestamp)
+        .toLocaleTimeString([], { hour: '2-digit',
+            minute: '2-digit' });
+
+    header.appendChild(who);
+    header.appendChild(ts);
+
+    // ── second row: message text
+    const text = document.createElement("span");
+    text.textContent = content;
+
+    // ── assemble + inject
+    wrapper.appendChild(header);
+    wrapper.appendChild(text);
+    chatMessagesEl.appendChild(wrapper);
+}
+
+
+function scrollChatToBottom() {
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+}

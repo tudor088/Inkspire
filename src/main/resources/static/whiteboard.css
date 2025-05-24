@@ -393,3 +393,182 @@ canvas {
     cursor: pointer;
 }
 
+/* ─── CHAT ─── */
+.chat {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem;
+    background: rgba(255,255,255,0.10);
+    border-radius: 8px;
+    padding: .75rem;
+    overflow: hidden;
+}
+
+.chat__messages {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    font-size: .95rem;
+    margin-bottom: .5rem;
+}
+
+.chat__messages::-webkit-scrollbar { width: 4px; }
+.chat__messages::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.4); border-radius: 4px;
+}
+
+.chat__input-row {
+    display: flex;
+}
+
+#chatInput{
+    flex:1 1 auto;
+    min-height:28px;    /* visible even if row is tight */
+    border:none;
+    border-radius:6px;
+    font:1rem/1.3 "Outfit",sans-serif;
+}
+
+#chatInput:focus { outline: none; }
+
+/* CHAT – new visual style */
+.chat            { background: #ffffff; }        /* full-white panel      */
+.chat__messages  { background: #ffffff; }
+
+.chat__msg{                       /* each message block              */
+    margin-bottom: 0.9rem;
+    line-height: 1.35;
+    font-weight: 400;
+}
+
+/* make the white card fill the whole width */
+.chat{
+    /* keep the rounded corners if you like them;
+       otherwise set border-radius:0 */
+    border-radius: 0;
+
+    background:#ffffff;
+    margin-top:1rem;      /* spacing under “Disconnect” */
+    padding:0;            /* no inner gap → no blue frame */
+    overflow:hidden;      /* hide scroll-bar corner */
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+}
+
+/* give the scroll area some inner air */
+.chat__messages{
+    padding:1rem;
+    flex:1 1 auto;
+}
+
+/* thin separator + extra space over the input  */
+.chat__input-row{
+    border-top:1px solid #e9e9e9;
+    padding:0.75rem 1rem 1rem;
+}
+
+
+.chat__msg-header{                /* first row: name + timestamp     */
+    display: flex;
+    align-items: baseline;
+    gap: .5rem;
+}
+
+.chat__msg strong{                /* username                         */
+    color: #2366ff;               /* the blue in your mock-up         */
+    font-weight: 600;
+    font-size: 0.94rem;
+}
+
+.chat__msg .ts{                   /* timestamp                        */
+    color: #888;
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+.chat__msg span{                  /* actual message text              */
+    display: block;
+    color: #222;
+    font-weight: 350;
+    margin-top: 2px;
+    white-space: pre-wrap;        /* keep manual line-breaks          */
+}
+
+/* entire left stack */
+.left-col{
+    display:flex;
+    flex-direction:column;
+    width:300px;
+    min-width:300px;            /* prevents shrinking */
+    height:100vh;
+}
+
+/* blue section stays exactly as before */
+.sidebar{
+    flex:0 0 auto;              /* height = just its content  */
+    padding:1.5rem;             /* keep your blue padding     */
+    background:#1e50ff;
+    color:#fff;
+}
+
+/* ――― CHAT PANEL ――― */
+.chat-panel{
+    flex:1 1 auto;              /* fills the remaining height */
+    display:flex;
+    flex-direction:column;
+    background:#fff;
+}
+
+/* scroll area */
+.chat__messages{
+    flex:1 1 auto;
+    overflow-y:auto;
+    padding:1.25rem;
+}
+
+/* input strip */
+.chat__input-row{
+    flex:0 0 auto;      /* never shrink                */
+    min-height:48px;    /* gives it a definite height  */
+    display:flex;       /* (keeps the input full-width)*/
+    border-top:1px solid #e9e9e9;
+    padding:1rem 1.25rem;
+}
+
+
+/* message formatting (your earlier rules kept) */
+.chat__msg-header{display:flex;gap:.5rem;align-items:baseline;}
+.chat__msg strong {color:#2366ff;font-weight:600;font-size:.94rem;}
+.chat__msg .ts   {color:#888;font-size:.75rem;font-weight:400;}
+.chat__msg span  {display:block;color:#222;font-weight:350;margin-top:2px;white-space:pre-wrap;}
+.chat__msg       {margin-bottom:.9rem;line-height:1.35;}
+
+/* -----------------------------------------------------------------
+   1.  let the white chat panel itself shrink inside .left-col
+------------------------------------------------------------------*/
+.chat-panel{
+    flex: 1 1 0;      /* 0 == no ‘natural’ size -> may shrink  */
+    min-height: 0;    /* <—  THIS is the crucial line          */
+    display:flex;
+    flex-direction:column;
+    background:#fff;
+}
+
+/* -----------------------------------------------------------------
+   2.  the scrollable list must ALSO be allowed to shrink
+------------------------------------------------------------------*/
+.chat__messages{
+    flex: 1 1 auto;
+    min-height: 0;     /* <—  without this the list dictates height */
+    overflow-y: auto;
+    padding: 1.25rem;
+}
+
+/* 3.  keep the input strip rigid (what you already did) */
+.chat__input-row{
+    flex: 0 0 auto;
+    min-height: 48px;
+    border-top: 1px solid #e9e9e9;
+    padding: 1rem 1.25rem;
+}
