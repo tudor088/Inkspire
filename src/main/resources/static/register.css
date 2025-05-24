@@ -1,44 +1,109 @@
-body {
-    font-family: Arial, sans-serif;
-    background: #f2f2f2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+/* ─── Load Outfit and global box-sizing ───────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap");
+
+*, *::before, *::after{
+    box-sizing:border-box;
 }
 
-.register-container {
-    background: white;
-    padding: 30px 40px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
+/* ─── PAGE BACKGROUND: dotted grid ───────────────────────────────── */
+html,body{
+    height:100%;
+    margin:0;
+    display:grid;
+    place-items:center;
+    font-family:"Outfit",sans-serif;
+
+    background:#f0f6fd;
+    background-image:radial-gradient(circle at center,
+    rgba(208,224,247,1) 2px,transparent 1px);
+    background-size:40px 40px;
+
+    overflow:hidden;
+    scrollbar-width:none;
+}
+body::-webkit-scrollbar{width:0;height:0}
+
+/* ─── REGISTER CARD (same as login card) ─────────────────────────── */
+.register-container{
+    background:#1e50ff;
+    color:#fff;
+
+    width:min(360px,90vw);
+    padding:40px 40px 48px;
+    border-radius:32px;
+    box-shadow:0 10px 32px rgba(0,0,0,.25);
+    text-align:center;
 }
 
-input {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+/* optional Inkspire logo — leave as-is if you still use <h1> */
+.register-container .logo{
+    width:280px;
+    margin:0 auto 28px;
+    display:block;
 }
 
-button {
-    background: #2B66EC;
-    color: white;
-    padding: 10px;
-    border: none;
-    width: 100%;
-    border-radius: 4px;
-    cursor: pointer;
+/* if you keep the <h1>, give it Inkspire spacing/weight */
+.register-container h1{
+    font-size:2rem;
+    font-weight:600;
+    margin:0 0 28px;
 }
 
-button:hover {
-    background: #567ed8;
-}
+/* ─── FORM ELEMENTS ──────────────────────────────────────────────── */
+input{
+    width:100%;
+    padding:14px 20px;
+    margin:12px 0;
+    border:none;
+    border-radius:30px;
 
-.error {
-    color: red;
-    margin-top: 10px;
+    font-size:1rem;
+    font-family:inherit;
+    color:#fff;
+
+    background:rgba(255,255,255,.18);
 }
+input::placeholder{color:rgba(255,255,255,.80);}
+input:focus{outline:none;box-shadow:0 0 0 3px rgba(255,255,255,.45);}
+
+/* button */
+button{
+    width:100%;
+    padding:14px 20px;
+    margin-top:8px;
+
+    border:none;
+    border-radius:30px;
+
+    font-size:1rem;
+    font-weight:600;
+    cursor:pointer;
+
+    background:#fff;
+    color:#1e50ff;
+    transition:background .18s,color .18s;
+}
+button:hover{background:#f4f7ff;color:#2b66ec;}
+
+/* secondary text / link */
+.register-container p{font-size:.92rem;margin-top:24px;}
+.register-container a{
+    color:#fff;
+    text-decoration:none;
+    border-bottom:1px solid currentColor;
+}
+.register-container a:hover{opacity:.8;}
+
+/* error message */
+.error{color:#ffcfdd;margin-top:14px;font-size:.88rem;}
+
+/* keep form centred & same width as button */
+#registerForm{
+    width:280px;
+    max-width:100%;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+}
+#registerForm input,
+#registerForm button{width:100%;}

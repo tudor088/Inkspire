@@ -1,48 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Dashboard | Inkspire</title>
-    <link rel="stylesheet" href="dashboard.css">
-    <link rel="icon" type="image/x-icon" href="icon.ico">
+    <link rel="stylesheet" href="dashboard.css" />
+    <link rel="icon" type="image/x-icon" href="icon.ico" />
 </head>
 <body>
-<div class="dashboard-container">
-    <h1>Welcome, <span id="currentUser"></span></h1>
-    <button id="logoutBtn">Logout</button>
 
-    <h2>Available Sessions</h2>
+<div class="dashboard-container">
+    <!-- Brand mark -->
+    <img src="icons/inkspire.svg" alt="Inkspire" class="logo" />
+
+    <!-- Greeting -->
+    <h1>Welcome, <span id="currentUser"></span> !</h1>
+
+    <!-- Session list header -->
+    <h2>Available sessions</h2>
+    <hr class="divider" />
+
+    <!-- Dynamic list filled by dashboard.js -->
     <ul id="sessionList"></ul>
 
-    <button id="createSessionBtn">Create New Session</button>
+    <!-- Line above footer buttons -->
+    <hr class="divider footer" />
+
+    <!-- Action bar -->
+    <div class="action-bar">
+        <button id="createSessionBtn">Create Session</button>
+        <button id="logoutBtn">Logout</button>
+    </div>
 </div>
 
-<!-- Create Session Modal -->
+<!-- ─────────── Modals ───────────────────────────────────────── -->
 <div id="createSessionModal" class="modal">
     <div class="modal-content">
         <span class="close" id="closeModalBtn">&times;</span>
         <h2>Create a Session</h2>
-        <label>Session Name:
-            <input type="text" id="sessionName" required>
-        </label><br>
-        <label>Password (optional):
-            <input type="password" id="sessionPassword">
-        </label><br>
+
+        <label>
+            Session Name:
+            <input type="text" id="sessionName" required />
+        </label><br />
+
+        <label>
+            Password&nbsp;(optional):
+            <input type="password" id="sessionPassword" />
+        </label><br />
+
         <button id="confirmCreateSessionBtn">Create</button>
     </div>
 </div>
 
-<!-- Password Prompt Modal -->
 <div id="passwordModal" class="modal">
     <div class="modal-content">
         <span class="close" id="closePasswordModalBtn">&times;</span>
         <h2>Enter Password</h2>
-        <input type="password" id="joinSessionPassword" placeholder="Enter password">
-        <br><br>
+
+        <input type="password"
+               id="joinSessionPassword"
+               placeholder="Enter password" /><br /><br />
+
         <button id="submitPasswordBtn">Join</button>
     </div>
 </div>
 
+<!-- ─────────── Scripts ─────────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script src="dashboard.js"></script>
 </body>
 </html>

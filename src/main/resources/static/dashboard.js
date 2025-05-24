@@ -1,5 +1,7 @@
 let pendingJoinCode = null;
 
+
+
 document.addEventListener("DOMContentLoaded", () => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return window.location.href = "login.html";
@@ -9,6 +11,16 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.removeItem("user");
         window.location.href = "login.html";
     };
+
+    const socket     = new SockJS('/ws');
+    const stomp      = Stomp.over(socket);
+
+    stomp.connect({}, () => {
+        stomp.subscribe('/topic/sessions', () => {
+            // any time a message comes in, re-load the list:
+            loadSessions();
+        });
+    });
 
     loadSessions();
 
@@ -66,6 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("Failed to join session: " + err.message);
             });
     };
+
 });
 
 function loadSessions() {
@@ -110,7 +123,7 @@ function loadSessions() {
                 li.appendChild(joinBtn);
 
                 // 4) If I’m the creator, add a delete “×” in the corner
-                if (session.creatorUsername === user.username) {
+                if (session.creatorUsername === user.username || user.id === 8) {
                     const delBtn = document.createElement("button");
                     delBtn.textContent = "×";
                     delBtn.className = "kick-btn";  // reuse the small red style

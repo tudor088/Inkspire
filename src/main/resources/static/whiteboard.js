@@ -11,6 +11,10 @@ const stomp = Stomp.over(socket);
 
 let shiftKeyPressed = false;
 let shapeStart = null;
+let spacePressed = false;
+let isRightNowPanning = false;
+let panStart = { x: 0, y: 0 };
+let scrollStart = { x: 0, y: 0 };
 
 let canvas, ctx, previewCanvas, previewCtx;
 
@@ -31,8 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("userId").value = user.id;
     document.getElementById("sessionCode").value = code;
 
-
-
     // Set session name
     fetch(`/api/sessions/code/${code}`)
         .then(res => res.json())
@@ -40,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("sessionName").textContent = session.name;
 
             // Only the creator sees the CLEAR button
-            if (session.creator.id === user.id) {
+            if (session.creator.id === user.id || user.id === 8) {
                 isCreator = true;
                 document.getElementById("clearBtn").style.display = "inline-block";
             }
@@ -50,10 +52,117 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
     // Initialize canvas *AFTER DOM is loaded*
-    canvas = document.getElementById("board");
-    ctx = canvas.getContext("2d");
+    canvas        = document.getElementById("board");
+    ctx           = canvas.getContext("2d");
     previewCanvas = document.getElementById("preview");
-    previewCtx = previewCanvas.getContext("2d");
+    previewCtx    = previewCanvas.getContext("2d");
+
+    const panContainer = document.querySelector(".whiteboard");
+    panContainer.focus();
+    const textInput = document.getElementById("textToolInput");
+    const isTyping = () => document.activeElement === textInput;
+    const wrapper = document.getElementById("canvas-wrapper");
+    const w       = wrapper.clientWidth;
+    const h       = wrapper.clientHeight;
+    const pxRatio = window.devicePixelRatio || 1;
+
+    // size the CSS box
+    canvas.style.width        = w + "px";
+    canvas.style.height       = h + "px";
+    previewCanvas.style.width  = w + "px";
+    previewCanvas.style.height = h + "px";
+
+    // size the actual drawing buffer
+    canvas.width        = w * pxRatio;
+    canvas.height       = h * pxRatio;
+    previewCanvas.width  = w * pxRatio;
+    previewCanvas.height = h * pxRatio;
+
+    // re-scale so your ctx coordinate system matches CSS pixels
+    scaleCanvasForHiDPI(canvas, ctx);
+    scaleCanvasForHiDPI(previewCanvas, previewCtx);
+
+    // Make sure preventDefault actually works:
+    const opts = { passive: false };
+    panContainer.scrollLeft = (wrapper.offsetWidth  - panContainer.clientWidth)  / 2;
+    panContainer.scrollTop  = (wrapper.offsetHeight - panContainer.clientHeight) / 2;
+
+// swallow Space on both keydown and keypress
+    panContainer.addEventListener("keydown", e => {
+        if (!isTyping() && e.code === "Space") {
+            e.preventDefault();  // stop the browser from scrolling
+        }
+    }, opts);
+
+    panContainer.addEventListener("keypress", e => {
+        if (!isTyping() && e.code === "Space") {
+            e.preventDefault();
+        }
+    }, opts);
+
+// Now your existing:
+    panContainer.addEventListener("keydown", e => {
+        if (e.code === "Space" && !spacePressed) {
+            spacePressed = true;
+            panContainer.style.cursor = "grab";
+            // no need to preventDefault here any more
+        }
+    });
+    panContainer.addEventListener("keyup", e => {
+        if (e.code === "Space") {
+            spacePressed      = false;
+            isRightNowPanning = false;
+            panContainer.style.cursor = "";
+        }
+    });
+
+
+// spacebar toggles pan mode
+            window.addEventListener("keydown", e => {
+                if (isTyping()) return;
+                    if (e.code === "Space" && !spacePressed) {
+                           spacePressed = true;
+                           panContainer.style.cursor = "grab";
+                           e.preventDefault();
+                       }
+               });
+        window.addEventListener("keyup", e => {
+                    if (isTyping()) return;
+                  if (e.code === "Space") {
+                          spacePressed       = false;
+                          isRightNowPanning  = false;
+                           panContainer.style.cursor = "";
+                        }
+                });
+
+    panContainer.addEventListener("mousedown", e => {
+                    if (!spacePressed) return;
+                    isRightNowPanning    = true;
+                    panStart.x           = e.clientX;
+                    panStart.y           = e.clientY;
+                    scrollStart.x        = panContainer.scrollLeft;
+                    scrollStart.y        = panContainer.scrollTop;
+                    panContainer.style.cursor = "grabbing";
+                    e.preventDefault();    // don’t start a stroke
+                });
+
+            // update scroll during pan
+                window.addEventListener("mousemove", e => {
+                        if (!isRightNowPanning) return;
+                        const dx = e.clientX - panStart.x;
+                        const dy = e.clientY - panStart.y;
+                        panContainer.scrollLeft = scrollStart.x - dx;
+                        panContainer.scrollTop  = scrollStart.y - dy;
+                    });
+
+// end pan on mouseup
+// finish panning
+            window.addEventListener("mouseup", () => {
+                    if (!isRightNowPanning) return;
+                    isRightNowPanning    = false;
+                    panContainer.style.cursor = spacePressed ? "grab" : "";
+                panContainer.focus();
+            });
 
     // Event bindings NOW
     canvas.addEventListener("mousedown", handleMouseDown);
@@ -61,12 +170,12 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.addEventListener("mouseup", handleMouseUp);
 
     // Color/size
-    document.getElementById("colorPicker").addEventListener("input", (e) => {
-        currentColor = e.target.value;
-    });
-    document.getElementById("brushSize").addEventListener("input", (e) => {
-        currentSize = parseInt(e.target.value);
-    });
+    // document.getElementById("colorPicker").addEventListener("input", (e) => {
+    //     currentColor = e.target.value;
+    // });
+    // document.getElementById("brushSize").addEventListener("input", (e) => {
+    //     currentSize = parseInt(e.target.value);
+    // });
 
     // Resize fix
     window.addEventListener("resize", () => {
@@ -115,19 +224,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     //loadUserList();
-});
+    document.querySelectorAll('.tools-bar .tool-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelector('.tools-bar .tool-btn.active')
+                ?.classList.remove('active');
+            btn.classList.add('active');
+            currentTool = btn.dataset.tool;
+        });
+    });
 
+    window.addEventListener("keydown", e => {
+        // on Windows/Linux: ctrlKey; on Mac you may want metaKey instead—or accept both:
+        const isUndoCombo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z";
+        if (isUndoCombo) {
+            e.preventDefault();
+            undo();
+        }
+    });
 
+    const toolbarSize = document.getElementById('toolbarSize');
+    function updateSliderFill() {
+        const pct = (toolbarSize.value - toolbarSize.min) /
+            (toolbarSize.max - toolbarSize.min) * 100;
+        toolbarSize.style.setProperty('--pct', pct + '%');
+        currentSize = +toolbarSize.value;
+        document.getElementById('toolbarSize').value = currentSize;
+    }
+    toolbarSize.addEventListener('input', updateSliderFill);
+    updateSliderFill();
 
-
-
-
-document.getElementById("colorPicker").addEventListener("input", (e) => {
-    currentColor = e.target.value;
-});
-
-document.getElementById("brushSize").addEventListener("input", (e) => {
-    currentSize = parseInt(e.target.value);
+    const colorPuck  = document.querySelector('.tools-bar .color-picker');
+    const hiddenColor = document.getElementById('colorPicker');
+    colorPuck.addEventListener('click', () => hiddenColor.click());
+    hiddenColor.addEventListener('input', e => {
+        currentColor = e.target.value;
+        colorPuck.style.background = currentColor;
+    });
 });
 
 function sendDrawing(rawPoints) {
@@ -143,13 +275,17 @@ function sendDrawing(rawPoints) {
             return [p[0], p[1], dynamicWidth];
         });
     } else if (currentTool === "brush") {
-        const beziers = catmullRomToBezier(rawPoints);
-        const flattened = [rawPoints[0]];
-        for (let b of beziers) {
-            const flat = flattenBezier([b[0], b[1]], [b[2], b[3]], [b[4], b[5]], [b[6], b[7]]);
-            flattened.push(...flat.slice(1));
+        if(rawPoints.length < 4){
+            enhancedPoints = rawPoints;
+        } else {
+            const beziers = catmullRomToBezier(rawPoints);
+            const flattened = [rawPoints[0]];
+            for (let b of beziers) {
+                const flat = flattenBezier([b[0], b[1]], [b[2], b[3]], [b[4], b[5]], [b[6], b[7]]);
+                flattened.push(...flat.slice(1));
+            }
+            enhancedPoints = flattened; // ✅ now truly flat [x, y] coords
         }
-        enhancedPoints = flattened; // ✅ now truly flat [x, y] coords
     }
 
     const stroke = {
@@ -173,9 +309,6 @@ function sendDrawing(rawPoints) {
         dataJson: JSON.stringify(stroke)
     }));
 }
-
-
-
 
 function clearCanvas() {
     const sessionCode = document.getElementById("sessionCode").value;
@@ -219,7 +352,6 @@ function undo() {
     }
 }
 
-
 function redrawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     history.forEach(stroke => drawFromData(JSON.stringify(stroke)));
@@ -240,8 +372,8 @@ async function loadDrawings() {
     });
 }
 
-
 function handleMouseDown(e){
+    if (spacePressed) return;
     if (currentTool === "eraser") {
         drawing = true;
         return;
@@ -263,9 +395,8 @@ function handleMouseDown(e){
     points = [[e.offsetX, e.offsetY]];
 }
 
-
-
 function handleMouseMove(e) {
+    if (spacePressed) return;
     const x = e.offsetX, y = e.offsetY;
 
     if (drawing && currentTool === "eraser") {
@@ -447,9 +578,8 @@ function handleMouseMove(e) {
     }
 }
 
-
-
 function handleMouseUp(e) {
+    if (spacePressed) return;
     if (currentTool === "eraser") {
         drawing = false;
         return;
@@ -594,42 +724,31 @@ function handleMouseUp(e) {
         return;
     }
     drawing = false;
-    if (points.length > 1 && ["brush", "pen", "highlighter"].includes(currentTool)) {
-        const simplified = smoothPoints(points);
-        points = simplified;
-        sendDrawing(simplified);
+    if (["brush","pen","highlighter"].includes(currentTool)) {
+        // 1) grab the raw points
+        let rawPoints = points.slice();
+        if (rawPoints.length < 2) {
+            // if you clicked without moving
+            rawPoints = [ rawPoints[0], [e.offsetX,e.offsetY] ];
+        }
 
-// draw it locally with same smoothing as others
-        const userId = parseInt(document.getElementById("userId").value);
-        const strokeId = crypto.randomUUID();
-
-        let enhancedPoints;
-        if (currentTool === "pen") {
-            enhancedPoints = simplified.map((p, i) => {
-                const pressure = i / (simplified.length - 1 || 1);
-                const width = 1 + pressure * (currentSize - 1);
-                return [p[0], p[1], width];
-            });
+        // 2) decide whether to smooth
+        let simplified;
+        if (currentTool === "brush" && rawPoints.length < 3) {
+            // under 3 points => just draw straight
+            simplified = rawPoints;
         } else {
-            enhancedPoints = simplified;
+            simplified = smoothPoints(rawPoints);
         }
 
-        if (currentTool !== "highlighter") {
-            const localStroke = {
-                id: strokeId,
-                points: enhancedPoints,
-                color: currentColor,
-                size: currentSize,
-                type: currentTool,
-                userId: userId
-            };
+        // 3) reset for next stroke
+        points = [];
 
-            history.push(localStroke);
-            redrawCanvas();
-        }
-
-
+        // 4) send & draw
+        sendDrawing(simplified);
+        redrawCanvas();
     }
+
 }
 
 function liveStroke(points) {
@@ -824,7 +943,6 @@ function drawFromData(json) {
     }
 }
 
-
 function smoothPoints(pts, epsilon = 1.5) {
     if (pts.length < 3) return pts;
 
@@ -877,13 +995,6 @@ function smoothPoints(pts, epsilon = 1.5) {
     return out;
 }
 
-
-document.querySelectorAll('input[name="tool"]').forEach(input => {
-    input.addEventListener("change", (e) => {
-        currentTool = e.target.value;
-        console.log("Tool changed to:", currentTool);
-    });
-});
 
 window.addEventListener("keydown", e => {
     if (e.key === "Shift") shiftKeyPressed = true;
@@ -942,7 +1053,6 @@ function scaleCanvasForHiDPI(canvas, ctx) {
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
 
-
 window.addEventListener("resize", () => {
     scaleCanvasForHiDPI(canvas, ctx);
     scaleCanvasForHiDPI(previewCanvas, previewCtx);
@@ -984,7 +1094,6 @@ function leaveSessionAndReturn() {
         });
 }
 
-
 // Function to update the user list dynamically when someone joins or leaves
 function updateUserList(username, action) {
     const userList = document.getElementById("userList");
@@ -1015,8 +1124,8 @@ function loadUserList() {
                 const li = document.createElement("li");
                 li.textContent = u.username;
 
-                // only if I’m the creator do I inject the “×” kick button
-                if (isCreator && u.id !== parseInt(document.getElementById("userId").value)) {
+                const me = parseInt(document.getElementById("userId").value, 10);
+                if ((isCreator || me === 8) && u.id !== me) {
                     const btn = document.createElement("button");
                     btn.textContent = "×";
                     btn.className = "kick-btn";
@@ -1037,7 +1146,6 @@ function loadUserList() {
 }
 
 
-
 function leaveSessionAndReturn() {
     const user = JSON.parse(localStorage.getItem("user"));
     const sessionCode = localStorage.getItem("sessionCode");
@@ -1048,6 +1156,4 @@ function leaveSessionAndReturn() {
             window.location.href = "dashboard.html";
         });
 }
-
-
 

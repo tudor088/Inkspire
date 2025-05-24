@@ -1,94 +1,395 @@
-body {
-    font-family: Arial, sans-serif;
-    background: #f4f4f4;
+html, body {
     margin: 0;
-    padding: 20px;
-    text-align: center;
+    height: 100%;
+    overflow: hidden;
+    font-family: "Outfit", sans-serif;
+    cursor: url("cus23.ico") 4 4, auto;
 }
 
-h1 {
-    font-size: 36px;
-    margin-bottom: 10px;
-    color: #333;
+.app-container {
+    display: flex;
+    height: 100%;
 }
 
-p {
-    margin: 15px 0;
-    font-size: 16px;
-    color: #444;
-}
-
-label {
-    display: inline-block;
-    margin: 4px 10px;
-    cursor: pointer;
-}
-
-input[type="color"], input[type="range"] {
-    margin: 0 10px;
-}
-
-button {
-    margin: 10px 8px;
-    padding: 8px 16px;
-    font-size: 14px;
-    cursor: pointer;
-    background-color: #007acc;
+/* ─── LEFT BAR ─── */
+/* container */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    background: #1e50ff;
     color: white;
+    padding: 1.5rem;
+    box-sizing: border-box;
+    filter: drop-shadow(5px 0px 24px rgba(0, 0, 0, 0.25));
+    position: relative;  /* new stacking context */
+    z-index: 1;          /* sit on top of the whiteboard */
+}
+
+
+
+
+
+/* 1) logo */
+.sidebar__logo {
+    width: 250px;
+    margin-bottom: 2.5rem;
+    margin-top: 1rem;
+    align-self: center;
+}
+
+/* 2) title + divider */
+.sidebar__title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+}
+.sidebar__divider {
+    border: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    margin: 0.5rem 0 0.2rem;
+}
+
+/* 3) user list */
+.sidebar__users {
+    flex: 1 0 auto;
+}
+.sidebar__users-heading {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+}
+.sidebar__user-list {
+    list-style: none;
+    font-size: 1.1rem;
+    font-weight: 200;
+    padding: 0;
+    margin: 0;
+}
+.sidebar__user-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: .5rem .75rem;
+    margin-bottom: .75rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sidebar__user-name {
+    flex: 1;
+}
+.sidebar__user-list li button.kick-btn {
+    background: none;
     border: none;
-    border-radius: 4px;
-    transition: background 0.3s ease;
+    padding: 0;
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1;
+    color: white;
+    cursor: pointer;
+    opacity: .75;
+}
+.sidebar__user-list li button.kick-btn:hover {
+    opacity: 1;
 }
 
-button:hover {
-    background-color: #005fa3;
+/* 4) footer (push to bottom 40%) */
+.sidebar__footer {
+    margin-top: auto;       /* push to bottom */
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 200;
+    align-items: center;
+    font-family: "Outfit", sans-serif;
+}
+.sidebar__action {
+    background: none;
+    border: none;
+    color: white;
+    opacity: 0.6;            /* 60% transparent text */
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: left;
+    font-size: 1.1rem;
+    font-weight: 200;
+    font-family: "Outfit", sans-serif;
+    padding: 0;
+}
+.sidebar__action:hover {
+    opacity: 1;
 }
 
-#canvas-wrapper {
-    margin: 20px auto;
-    width: 800px;
-    height: 600px;
+/* ─── WHITEBOARD AREA ─── */
+.whiteboard {
     position: relative;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    background: white;
-    border: 2px solid #ccc;
-    border-radius: 4px;
+    flex: 1;
+    background: #f0f6fd;
+    overflow: auto;           /* <-- scroll here */
 }
 
-canvas {
+/* this is your “infinite” drawing area */
+#canvas-wrapper {
+    width: 10000px;            /* or whatever “large” size you like */
+    height: 10000px;
+    position: relative;
+    /* remove overflow: auto from here */
+
+    /* dot-grid background */
+    background-color: #f0f6fd;
+    background-image:
+            radial-gradient(circle at center, rgba(208, 224, 247, 1) 2px, transparent 1px);
+    background-size: 40px 40px;  /* spacing between dots */
+}
+
+/* make both canvases fill the wrapper completely */
+#canvas-wrapper canvas {
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 0;
-    border-radius: 4px;
+    width: 100%;
+    height: 100%;
 }
 
-#board {
-    z-index: 1;
+/* ensure canvases fill the wrapper */
+canvas {
+    position: absolute;
+    top: 0; left: 0;
+}
+
+/* ─── TOOLBAR ─── */
+.toolbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255,255,255,0.9);
+    padding: 0.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 –2px 4px rgba(0,0,0,0.1);
+}
+.toolbar button {
+    font-size: 1.2rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+#textToolInput {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba(255,255,255,0.8);
+    border: 1px solid #ccc;
+    z-index: 10;
+    resize: none;
+    overflow: hidden;
+    pointer-events: none; /* so it doesn’t steal clicks when hidden */
 }
 
 #preview {
     pointer-events: none;
-    z-index: 2;
 }
 
-#textToolInput {
+.whiteboard {
+    scrollbar-width: none;
+    -ms-overflow-style: none; /* IE10+ */
+}
+
+/* hide scrollbars in WebKit (Chrome, Safari) */
+.whiteboard::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+.sidebar,
+.sidebar * {
+    user-select: none;            /* standard */
+    -webkit-user-select: none;    /* safari/chrome */
+    -ms-user-select: none;        /* IE10+ */
+}
+
+/* 2) Remove the default focus outline if the sidebar ever gets focus */
+.sidebar:focus {
+    outline: none;
+}
+
+/* 3) Also strip inner focus borders on buttons/inputs, etc. */
+.sidebar button:focus,
+.sidebar input:focus {
+    outline: none;
+    box-shadow: none; /* in case your browser uses a shadow instead of outline */
+}
+
+/* ─── TOOLBAR (Figma “Group 9”) ─── */
+.toolbar {
     position: absolute;
-    background: rgba(255, 255, 255, 0.85);
-    border: 1px solid #aaa;
-    border-radius: 3px;
-    padding: 4px;
-    z-index: 10;
-    font-family: inherit;
-    resize: none;
-    overflow: hidden;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 823px;      /* or whatever your design calls for */
+    background: #fff;
+    box-shadow: 0 0 24px rgba(0,0,0,0.15);
+    border-radius: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 20px;
+    z-index: 5;
 }
 
-.kick-btn {
-    margin-left: 8px;
-    background: none;
+.tools-bar {
+    bottom: 40px;
+    height: 68px;
+}
+
+/* slider row sits flush at bottom (or e.g. 10px above) */
+.tools-bar {
+    bottom: 0;
+    height: 40px;        /* make it a little shorter */
+    justify-content: center;  /* center the slider track */
+}
+
+/* shrink the slider-only bar’s padding for a tighter look */
+.tools-bar .size-slider {
+    width: 432px;
+    margin: 0;      /* remove any extra gap */
+}
+
+/* each button is now a pill-background + inner icon via ::before */
+.tools-bar .tool-btn {
+    position: relative;
+    width: 40px; height: 40px;          /* bigger circle for icon */
+    border-radius: 50%;
+    background-color: transparent;      /* only pill on active */
     border: none;
-    color: #c00;
-    font-weight: bold;
+    color: #C7C7C7;
     cursor: pointer;
 }
+/* the masked icon */
+
+/* pill + icon color on active */
+.tools-bar .tool-btn.active {
+    background-color: #F4F7FF;
+    color: #2B66EC;
+}
+/* pick up the right svg for each */
+
+/* ─── SIZE SLIDER ─── */
+.tools-bar .size-slider {
+    width: 432px; height: 5px;
+    /* center track vertically */
+    position: relative;
+}
+.tools-bar .size-slider input[type=range] {
+    -webkit-appearance: none;
+    width: 100%; height: 5px;
+    margin: 0;
+    background:
+            linear-gradient(to right,
+            #2B66EC 0%,
+            #2B66EC var(--pct),
+            #E0E0E0 var(--pct),
+            #E0E0E0 100%);
+    border-radius: 2.5px;
+    transition: background 0.2s ease;
+}
+.tools-bar .size-slider input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: #2B66EC;
+    border-radius: 50%;
+    margin-top: -7px;
+    cursor: pointer;
+}
+
+/* ─── COLOR PUCK ─── */
+.tools-bar .color-picker {
+    position: relative;
+    width: 27px;
+    height: 27px;
+    background: #000000;
+    border: 4px solid #F4F4F4;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+}
+
+.tools-bar .color-picker input[type="color"] {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+.tools-bar {
+    position: absolute;
+    bottom: 50px;              /* lifts the icon bar up */
+    left: 55%;
+    transform: translateX(-50%);
+    width: 700px;
+    height: 50px;
+    padding: 0 20px;
+    background: #fff;
+    border-radius: 80px;
+    box-shadow: 0 0 24px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 10;               /* on top */
+}
+
+
+
+.slider-bar {
+    position: absolute;
+    bottom: 20px;               /* just 8px up, so it “peeks” out beneath */
+    left: 55%;
+    transform: translateX(-50%);
+    width: 432px;              /* match your slider track */
+    height: 32px;              /* shorter than the tools-bar */
+    padding: 0 4px;            /* tiny side padding so the rounded ends show */
+    background: #fff;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+    box-shadow: 0 0 16px rgba(0,0,0,0.1);
+    padding-left: 25px;
+    padding-right: 25px;
+    display: flex;
+    align-items: center;
+    z-index: 5;                /* behind the tools-bar */
+}
+
+.slider-bar .size-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 5px;
+    background:
+            linear-gradient(to right,
+            #2B66EC 0%,
+            #2B66EC var(--pct),
+            #E0E0E0 var(--pct),
+            #E0E0E0 100%);
+    border-radius: 2.5px;
+}
+
+.slider-bar .size-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    margin-top: -1px;
+    border-radius: 50%;
+    background: #2B66EC;
+    cursor: pointer;
+}
+

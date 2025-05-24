@@ -1,44 +1,136 @@
-body {
-    font-family: Arial, sans-serif;
-    background: #f2f2f2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+/* ─── Load the typeface you already use on the whiteboard ─────────── */
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap");
+/* ── keep padding INSIDE the width for every element ─────────────── */
+*, *::before, *::after {
+    box-sizing: border-box;
 }
 
-.login-container {
-    background: white;
-    padding: 30px 40px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
+/* form elements inherit that global rule, but we can be explicit too */
+#loginForm input,
+#loginForm button {
+    width: 100%;          /* already set, keep it */
+    box-sizing: inherit;  /* ← redundant but self-documenting */
 }
 
-input {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+/* ─── PAGE BACKGROUND (same dotted grid) ──────────────────────────── */
+html, body{
+    height:100%;
+    margin:0;
+    display:grid;               /* simpler full-screen centring */
+    place-items:center;
+    font-family:"Outfit",sans-serif;
+
+    background:#f0f6fd;
+    background-image:radial-gradient(circle at center,
+    rgba(208,224,247,1) 2px,transparent 1px);
+    background-size:40px 40px;
+
+    overflow:hidden;
+    scrollbar-width:none;
+}
+body::-webkit-scrollbar{width:0;height:0}
+
+/* ─── LOGIN CARD ─────────────────────────────────────────────────── */
+.login-container{
+    background:#1e50ff;
+    color:#fff;
+
+    width:min(360px,90vw);      /* keep it narrow on small screens   */
+    padding:40px 40px 48px;     /* horizontally slimmer              */
+    border-radius:32px;
+    box-shadow:0 10px 32px rgba(0,0,0,.25);
+
+    text-align:center;
 }
 
-button {
-    background: #2B66EC;
-    color: white;
-    padding: 10px;
-    border: none;
-    width: 100%;
-    border-radius: 4px;
-    cursor: pointer;
+/* logo */
+.login-container .logo{
+    width:280px;
+    margin:0 auto 28px;
+    display:block;
 }
 
-button:hover {
-    background: #688de1;
+/* ─── FORM ───────────────────────────────────────────────────────── */
+input{
+    width:100%;
+    padding:14px 20px;
+    margin:12px 0;
+    border:none;
+    border-radius:30px;
+
+    font-size:1rem;
+    font-family:inherit;
+    color:#fff;
+
+    background:rgba(255,255,255,.18);
+}
+/* white placeholder text */
+input::placeholder{
+    color:rgba(255,255,255,.80);
 }
 
-.error {
-    color: red;
-    margin-top: 10px;
+/* focus ring */
+input:focus{
+    outline:none;
+    box-shadow:0 0 0 3px rgba(255,255,255,.45);
+}
+
+/* button */
+button{
+    width:100%;
+    padding:14px 20px;
+    margin-top:8px;
+
+    border:none;
+    border-radius:30px;
+
+    font-size:1rem;
+    font-weight:600;            /* heft like toolbar labels */
+    cursor:pointer;
+
+    background:#fff;
+    color:#1e50ff;
+    transition:background .18s,color .18s;
+}
+button:hover{
+    background:#f4f7ff;
+    color:#2b66ec;
+}
+
+/* secondary text & link */
+.login-container p{
+    font-size:.92rem;
+    margin-top:24px;
+}
+.login-container a{
+    color:#fff;
+    text-decoration:none;
+    border-bottom:1px solid currentColor;
+}
+.login-container a:hover{
+    opacity:.8;
+}
+
+/* error message */
+.error{
+    color:#ffcfdd;
+    margin-top:14px;
+    font-size:.88rem;
+}
+
+#loginForm{
+    /* pick any width that feels right: the button is already pill-shaped, so
+       ~280 px lines up nicely with its border-radius curve                 */
+    width:280px;          /* << tweak if you want it a tad wider/narrower   */
+    max-width:100%;       /* stay responsive on very small screens          */
+    margin:0 auto;        /* truly centre the whole block horizontally      */
+
+    display:flex;
+    flex-direction:column;
+}
+
+/* now the inputs & button fill that 280 px, perfectly centred */
+#loginForm input,
+#loginForm button{
+    width:100%;
 }
